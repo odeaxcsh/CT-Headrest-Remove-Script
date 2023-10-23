@@ -1,7 +1,3 @@
-from sklearn.pipeline import Pipeline
-from sklearn.linear_model import RidgeCV
-from sklearn.preprocessing import StandardScaler, PolynomialFeatures
-
 from scipy.interpolate import NearestNDInterpolator
 
 from tqdm import tqdm
@@ -10,7 +6,6 @@ import numpy as np
 
 THRESHOLD = 150
 BACKGROUND = 0
-SPLINE_DEGREE = 4
 
 volume = pv.ImageData('data/valid-1.nii')
 
@@ -55,28 +50,14 @@ plotter.add_mesh(mesh, color='red')
 plotter.add_mesh(region_mesh, color='blue')
 plotter.show()
 
-# angle_mask = region_mesh.edge_mask(30)
-# good_points_ids = np.where(~angle_mask)[0]
-# good_mesh = region_mesh.extract_points(good_points_ids).extract_geometry()
-
 X = region_mesh.points[:, [0, 2]]
 Y = region_mesh.points[:, [1]]
-
-model = Pipeline([
-    ('scaler', StandardScaler()),
-    ('poly', PolynomialFeatures(degree=SPLINE_DEGREE)),
-    # ('spline', SplineTransformer(n_knots=SPLINE_DEGREE + 1, degree=SPLINE_DEGREE)),
-    ('linear', RidgeCV(fit_intercept=True))
-])
 
 x, z = volume.bounds[1], volume.bounds[-1]
 plane = pv.Plane(
     center=(x / 2, 0, z / 2), direction=(0, -1, 0),
     i_size=z, j_size=x, i_resolution=volume.dimensions[2] - 1, j_resolution=volume.dimensions[0] - 1
 )
-
-# model.fit(X, Y)
-# Z = model.predict(plane.points[:, [0, 2]])
 
 interp = NearestNDInterpolator(X, Y)
 Z = interp(plane.points[:, [0, 2]])
